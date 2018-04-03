@@ -1,5 +1,6 @@
 
 
+
 const functions = require('firebase-functions');
 var bodyParser = require('body-parser');
 const express = require('express');
@@ -11,6 +12,47 @@ const app = express();
 // The Firebase Admin SDK to access the Firebase Realtime Database.
 const admin = require('firebase-admin');
 admin.initializeApp(functions.config().firebase);
+
+const nodeMailer = require('nodemailer');
+const mailTransport = nodeMailer.createTransport({
+  host:'smtp.gmail.com',
+  port:465,
+  secure:true,
+  auth:{
+    user:'smart.bus.vast@gmail.com',
+    pass:'smartbus123'
+  }
+}) 
+
+//const ref = admin.database.ref();
+
+exports.sendMail = functions.database.ref('/Users/{pushId}').onWrite(event =>{
+  const user = event.data.val();
+  if (user.roleId === 2)
+  {
+    //parent 
+
+    const mailId = user.email;
+    const name = user.firstName;
+    console.log(mailId);
+    const mailOptions = {
+      from:'SmartBus <smart.bus.vast@gmail.com>',
+      bcc:mailId,
+      subject:'Smart Bus Tracking System',
+      text:'Dear ' + name + ',' + '\r\n \r\n Your Registration is successfull.\r\n Kindly use below login credentials. \r\n Email: ' +mailId + ' \r\n Password: pnt12345678'
+
+    }
+    return mailTransport.sendMail(mailOptions).then(()=>{
+      console.log("send mail");
+       return null;
+
+    }).catch(error =>{
+      console.log(error);
+      return null;
+    });
+  }
+  console.log(user);
+})
 
 
 app.use(bodyParser.json());
@@ -72,7 +114,5 @@ exports.authenticateUser = functions.https.onRequest((req, res) => {
     });
 
   });
-
-
 
 });
